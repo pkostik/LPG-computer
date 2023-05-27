@@ -1,10 +1,10 @@
 //Transmitter program
 
 #include <SPI.h>
-#include "Mirf.h"
-#include "nRF24L01.h"
-#include "MirfHardwareSpiDriver.h"
-#define CALCULATION_NUMBER 10
+#include <Mirf.h>
+#include <nRF24L01.h>
+#include <MirfHardwareSpiDriver.h>
+#define CALCULATION_NUMBER 15
 
 Nrf24l Mirf = Nrf24l(10, 9);
 
@@ -24,7 +24,7 @@ int average_sensor_value()
   for (int i=0;i<CALCULATION_NUMBER;i++)
   {
     sensor_data[i] = analogRead(A0);
-    delay(200);
+    delay(300);
   }
   
   return get_freq_int_value(sensor_data);
@@ -48,8 +48,8 @@ void loop()
   Mirf.setTADDR((byte *)"FGHIJ");           //Set the receiver address
   value = average_sensor_value();
   Mirf.send((byte *)&value);                //Send instructions, send value
-  Serial.print("Wait for sending.....");
+  //Serial.print("Wait for sending.....");
   while (Mirf.isSending()) delay(1);        //Until you send successfully, exit the loop
-  Serial.print("Send success:");
-  Serial.println(value);
+  //Serial.print("Send success:");
+  //Serial.println(value);
 }
