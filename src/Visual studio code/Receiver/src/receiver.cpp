@@ -21,7 +21,7 @@ int percent = 0;
 volatile int seconds_last_value_received = 0;
 
 //Calibration section begin
-int current_mode=2;          //Default mode:Litters
+int current_mode=2;          //Default menu mode
 int _min=5;                  //Minimum absolute sensor value
 int _max=1023;               //Maximum absolute sensor value
 int distance_capacity=260;   //Distance in case the tank is fully charged
