@@ -9,7 +9,7 @@
 #define DIO 5
 #define BTN_PIN 2
 #define DISPLAY_POWER_PIN 4
-#define DISPLAY_DEFAULT_BRTN 4
+#define DISPLAY_DEFAULT_BRTN 7
 #define MAX_SECONDS_VISIBLE 20
 #define MAX_SECONDS_TOTAL 25
 
@@ -41,11 +41,6 @@ void power_up_display()
     digitalWrite(DISPLAY_POWER_PIN, HIGH);
     disp.init();
     disp.set(DISPLAY_DEFAULT_BRTN);
-}
-
-bool between(int value, int minv, int maxv)
-{
-  return (value>=minv)&&(value<maxv);
 }
 
 int get_wpgh1_value()
