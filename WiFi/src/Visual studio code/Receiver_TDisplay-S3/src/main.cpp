@@ -13,7 +13,7 @@
 #include <bits/stdc++.h>
 #include <ESP32Ping.h>
 
-#define MAX_MODE 4
+#define MAX_MODE 6
 #define PIN_POWER_ON 15
 #define PIN_ADDITIONAL_BUTTON 21
 #define H 170
@@ -26,7 +26,7 @@
 
 std::deque<double> queue;
 Button btn2(PIN_ADDITIONAL_BUTTON);
-
+bool wifi_is_connected = false;
 TFT_eSPI lcd = TFT_eSPI();
 TFT_eSprite sprite = TFT_eSprite(&lcd);
 char packetBuffer[PACKET_SIZE+1];
@@ -41,7 +41,9 @@ double sensorValue = 0.0;
 double percent = 0;
 double liters = 0;
 double distance = 0;
-bool isPingOk = false;
+double initial_liters = 0;
+bool initial_value_calculated = false;
+bool timer_disconnected=true;
 bool key=false;
 int menu;
 
@@ -140,13 +142,24 @@ void drawStr(String text, double value, unsigned long min, unsigned long max)
     sprite.setTextColor(TFT_GREEN, TFT_BLACK);
     sprite.drawCentreString(text, xpos+130, ypos + 30, 4);
 
-    if(isPingOk || WiFi.softAPgetStationNum())
+    if(wifi_is_connected)
       sprite.fillRect(xpos-10,ypos-10,20,20,TFT_GREEN);
     else
       sprite.fillRect(xpos-10,ypos-10,20,20,TFT_RED);
 
-    if(queue.size()<QUEUE_SIZE)  
+    if(queue.size()<QUEUE_SIZE)
+    { 
+      initial_value_calculated = false;
       sprite.drawString(String(queue.size()), xpos-10, ypos+50, 4);
+    }
+    else
+    {
+      if(!initial_value_calculated)
+      {
+        initial_value_calculated = true;
+        initial_liters = liters;
+      }
+    }
 
     sprite.pushSprite(0,0);
 }
@@ -191,7 +204,38 @@ void handleData()
       break;  
       case 4:
         drawStr("Distance",distance, 0, data.distance_capacity);
-      break;            
+      break;
+      case 5:
+        drawStr("L per trip",liters - initial_liters, 0, data.liter_capacity);
+      break;
+      case 6:
+        sprite.fillSprite(TFT_BLACK);
+        sprite.setTextColor(TFT_WHITE, TFT_BLACK);
+        sprite.drawString(String(liters,2), 100, 30, 6);
+        if(queue.size()<QUEUE_SIZE)
+        { 
+          initial_value_calculated = false;
+        }
+        else
+        {
+          if(!initial_value_calculated && initial_liters<=0.001)
+          {
+            initial_value_calculated = true;
+            initial_liters = liters;
+          }
+        }       
+        sprite.drawString(String((liters - initial_liters),2), 100, 90, 6);
+        sprite.drawString(String((sensorValue),2), 100, 150, 6);
+        sprite.setTextColor(TFT_GREENYELLOW, TFT_BLACK);
+        sprite.drawString("L", 10, 30, 4);
+        sprite.drawString("L, trip", 10, 90, 4);
+        sprite.drawString("ADC", 10, 150, 4);
+        if(wifi_is_connected)
+          sprite.fillRect(W-40,H-40,20,20,TFT_GREEN);
+        else
+          sprite.fillRect(W-40,H-40,20,20,TFT_RED);    
+        sprite.pushSprite(0,0);
+      break;                     
     }  
 }
 
@@ -363,6 +407,7 @@ void loop()
     int packetSize = udp.parsePacket();
     if(packetSize>0)
     {
+        timer_disconnected = false;
         int len = udp.read(packetBuffer, PACKET_SIZE);
         if (len > 0) 
         {
@@ -399,9 +444,12 @@ void loop()
     }
   }
 
-  if(looper%7000==0)
+  if(looper%4000==0)
   {
-      isPingOk = Ping.ping(remoteIp,2);
+    wifi_is_connected = WiFi.softAPgetStationNum();
+    //wifi_is_connected = Ping.ping(remoteIp, 3);
+    //Serial.println(remoteIp.toString());
+    //Serial.println(wifi_is_connected);
   }
 
   handleData();
